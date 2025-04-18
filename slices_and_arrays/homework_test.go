@@ -1,4 +1,4 @@
-package main
+package profiles
 
 import (
 	"reflect"
@@ -17,13 +17,15 @@ type CircularQueue[CI CircularableInts] struct {
 	values []CI
 	front  int
 	rear   int
+	size   int
 }
 
 func NewCircularQueue[CI CircularableInts](size int) CircularQueue[CI] {
 	return CircularQueue[CI]{
 		values: make([]CI, size),
-		front:  -1,
+		front:  0,
 		rear:   -1,
+		size:   0,
 	}
 }
 
@@ -35,9 +37,7 @@ func (q *CircularQueue[CI]) Push(value CI) bool {
 	q.rear = (q.rear + 1) % len(q.values)
 	q.values[q.rear] = value
 
-	if q.front == -1 {
-		q.front = 0
-	}
+	q.size++
 
 	return true
 }
@@ -46,14 +46,12 @@ func (q *CircularQueue[CI]) Pop() bool {
 	if q.Empty() {
 		return false
 	}
-	q.values[q.front] = 0
 
-	if q.front == 0 && q.rear == 0 {
-		q.front = -1
-		q.rear = -1
-	} else {
-		q.front = (q.front + 1) % len(q.values)
-	}
+	q.values[q.front] = 0
+	q.front = (q.front + 1) % cap(q.values)
+
+	q.size--
+
 	return true
 }
 
@@ -74,11 +72,11 @@ func (q *CircularQueue[CI]) Back() CI {
 }
 
 func (q *CircularQueue[CI]) Empty() bool {
-	return q.front == -1 && q.rear == -1
+	return q.size == 0
 }
 
 func (q *CircularQueue[CI]) Full() bool {
-	return (q.front == 0 && q.rear == len(q.values)-1) || q.front == q.rear+1
+	return q.size == cap(q.values)
 }
 
 func TestCircularQueue(t *testing.T) {
