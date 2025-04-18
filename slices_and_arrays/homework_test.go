@@ -1,4 +1,4 @@
-package profiles
+package main
 
 import (
 	"reflect"
