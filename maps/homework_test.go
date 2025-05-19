@@ -1,4 +1,4 @@
-package profiles
+package main
 
 import (
 	"reflect"
@@ -14,8 +14,9 @@ func NewOrderedMap[C comparable](less func(a, b C) bool) OrderedMap[C] {
 }
 
 type OrderedMap[C comparable] struct {
-	root *node[C]
+	root   *node[C]
 	lessFn func(a, b C) bool
+	size   int
 }
 
 type node[C comparable] struct {
@@ -26,6 +27,7 @@ type node[C comparable] struct {
 
 func (m *OrderedMap[C]) Insert(key, value C) {
 	m.root = insert(m.root, key, value, m.lessFn)
+	m.size++
 }
 
 func insert[C comparable](n *node[C], key, value C, less func(a, b C) bool) *node[C] {
@@ -54,6 +56,7 @@ func (m *OrderedMap[C]) Erase(key C) {
 	}
 
 	erase(m.root, key)
+	m.size--
 }
 
 func erase[C comparable](n *node[C], key C) *node[C] {
@@ -112,12 +115,7 @@ func contains[C comparable](n *node[C], key C) bool {
 }
 
 func (m *OrderedMap[C]) Size() int {
-	size := 0
-	walkIn(m.root, func(_, _ C) {
-		size += 1
-	})
-
-	return size
+	return m.size
 }
 
 func walkIn[C comparable](n *node[C], action func(C, C)) {
