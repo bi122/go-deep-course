@@ -23,23 +23,23 @@ func WithName(name string) func(*GamePerson) {
 }
 
 func WithCoordinates(x, y, z int) func(*GamePerson) {
-	if x < -2_000_000_000 {
-		x = -2_000_000_000
+	if x < maxNegativeCoordinate {
+		x = maxNegativeCoordinate
 	}
-	if x > 2_000_000_000 {
-		x = 2_000_000_000
+	if x > maxPositiveCoordinate {
+		x = maxPositiveCoordinate
 	}
-	if y < -2_000_000_000 {
-		y = -2_000_000_000
+	if y < maxNegativeCoordinate {
+		y = maxNegativeCoordinate
 	}
-	if y > 2_000_000_000 {
-		y = 2_000_000_000
+	if y > maxPositiveCoordinate {
+		y = maxPositiveCoordinate
 	}
-	if z < -2_000_000_000 {
-		z = -2_000_000_000
+	if z < maxNegativeCoordinate {
+		z = maxNegativeCoordinate
 	}
-	if z > 2_000_000_000 {
-		z = 2_000_000_000
+	if z > maxPositiveCoordinate {
+		z = maxPositiveCoordinate
 	}
 	return func(person *GamePerson) {
 		person.x = int32(x)
@@ -52,8 +52,8 @@ func WithGold(gold int) func(*GamePerson) {
 	if gold < 0 {
 		return func(person *GamePerson) {}
 	}
-	if gold > 2_000_000_000 {
-		gold = 2_000_000_000
+	if gold > maxGold {
+		gold = maxGold
 	}
 	return func(person *GamePerson) {
 		person.gold = uint32(gold)
@@ -64,8 +64,8 @@ func WithMana(mana int) func(*GamePerson) {
 	if mana < 0 {
 		return func(person *GamePerson) {}
 	}
-	if mana > 1000 {
-		mana = 1000
+	if mana > maxMana {
+		mana = maxMana
 	}
 	return func(person *GamePerson) {
 		var mask byte = 0b1100_0000
@@ -78,13 +78,12 @@ func WithHealth(health int) func(*GamePerson) {
 	if health < 0 {
 		return func(person *GamePerson) {}
 	}
-	if health > 1000 {
-		health = 1000
+	if health > maxHealth {
+		health = maxHealth
 	}
 	return func(person *GamePerson) {
 		person.manaAndHealthArr[2] = byte(health)
-		var mask byte = 0b0000_0011
-		person.manaAndHealthArr[1] = person.manaAndHealthArr[1]&^mask | byte(health>>8)
+		person.manaAndHealthArr[1] = person.manaAndHealthArr[1]&^healthMask | byte(health>>8)
 	}
 }
 
@@ -92,12 +91,11 @@ func WithRespect(respect int) func(*GamePerson) {
 	if respect < 0 {
 		return func(person *GamePerson) {}
 	}
-	if respect > 10 {
-		respect = 10
+	if respect > maxRespect {
+		respect = maxRespect
 	}
 	return func(person *GamePerson) {
-		var mask byte = 0b1111_0000
-		person.respectAndStrengthArr = person.respectAndStrengthArr&^mask | (byte(respect) << 4)
+		person.respectAndStrengthArr = person.respectAndStrengthArr&^lastHalfMask | (byte(respect) << 4)
 	}
 }
 
@@ -105,12 +103,11 @@ func WithStrength(strength int) func(*GamePerson) {
 	if strength < 0 {
 		return func(person *GamePerson) {}
 	}
-	if strength > 10 {
-		strength = 10
+	if strength > maxStrength {
+		strength = maxStrength
 	}
 	return func(person *GamePerson) {
-		var mask byte = 0b0000_1111
-		person.respectAndStrengthArr = person.respectAndStrengthArr&^mask | byte(strength)
+		person.respectAndStrengthArr = person.respectAndStrengthArr&^firstHalfMask | byte(strength)
 	}
 }
 
@@ -118,12 +115,11 @@ func WithExperience(experience int) func(*GamePerson) {
 	if experience < 0 {
 		return func(person *GamePerson) {}
 	}
-	if experience > 10 {
-		experience = 10
+	if experience > maxExperience {
+		experience = maxExperience
 	}
 	return func(person *GamePerson) {
-		var mask byte = 0b1111_0000
-		person.experienceAndLevelArr = person.experienceAndLevelArr&^mask | (byte(experience) << 4)
+		person.experienceAndLevelArr = person.experienceAndLevelArr&^lastHalfMask | (byte(experience) << 4)
 	}
 }
 
@@ -131,12 +127,11 @@ func WithLevel(level int) func(*GamePerson) {
 	if level < 0 {
 		return func(person *GamePerson) {}
 	}
-	if level > 10 {
-		level = 10
+	if level > maxLevel {
+		level = maxLevel
 	}
 	return func(person *GamePerson) {
-		var mask byte = 0b0000_1111
-		person.experienceAndLevelArr = person.experienceAndLevelArr&^mask | byte(level)
+		person.experienceAndLevelArr = person.experienceAndLevelArr&^firstHalfMask | byte(level)
 	}
 }
 
@@ -160,8 +155,7 @@ func WithFamily() func(*GamePerson) {
 
 func WithType(personType int) func(*GamePerson) {
 	return func(person *GamePerson) {
-		var mask byte = 0b0000_1111
-		person.propertyBitmap = person.propertyBitmap&^mask | byte(personType)
+		person.propertyBitmap = person.propertyBitmap&^firstHalfMask | byte(personType)
 	}
 }
 
@@ -175,6 +169,16 @@ const (
 	houseBitMask  byte = 0b0001_0000
 	gunBitMask    byte = 0b0010_0000
 	familyBitMask byte = 0b0100_0000
+
+	maxPositiveCoordinate                            = 2_000_000_000
+	maxNegativeCoordinate                            = -2_000_000_000
+	maxGold                                          = 2_000_000_000
+	maxMana, maxHealth                               = 1000, 1000
+	maxLevel, maxExperience, maxStrength, maxRespect = 10, 10, 10, 10
+	firstHalfMask                                    = 0b0000_1111
+	lastHalfMask                                     = 0b1111_0000
+	healthMask                                       = 0b0000_0011
+	healthAntiMask                                   = 0b1111_1100
 )
 
 // GamePerson struct tag format: `my-json:"${MethodName}:${JSONProperty},..."
@@ -280,23 +284,23 @@ func (p *GamePerson) Mana() int {
 }
 
 func (p *GamePerson) Health() int {
-	return int(p.manaAndHealthArr[1]&^0b1111_1100)<<8 + int(p.manaAndHealthArr[2])
+	return int(p.manaAndHealthArr[1]&^healthAntiMask)<<8 + int(p.manaAndHealthArr[2])
 }
 
 func (p *GamePerson) Respect() int {
-	return int(p.respectAndStrengthArr&^0b0000_1111) >> 4
+	return int(p.respectAndStrengthArr&^firstHalfMask) >> 4
 }
 
 func (p *GamePerson) Strength() int {
-	return int(p.respectAndStrengthArr &^ 0b1111_0000)
+	return int(p.respectAndStrengthArr &^ lastHalfMask)
 }
 
 func (p *GamePerson) Experience() int {
-	return int(p.experienceAndLevelArr&^0b0000_1111) >> 4
+	return int(p.experienceAndLevelArr&^firstHalfMask) >> 4
 }
 
 func (p *GamePerson) Level() int {
-	return int(p.experienceAndLevelArr &^ 0b1111_0000)
+	return int(p.experienceAndLevelArr &^ lastHalfMask)
 }
 
 func (p *GamePerson) HasHouse() bool {
@@ -312,7 +316,7 @@ func (p *GamePerson) HasFamily() bool {
 }
 
 func (p *GamePerson) Type() int {
-	return int(p.propertyBitmap&^0b1111_0000) >> 4
+	return int(p.propertyBitmap&^lastHalfMask) >> 4
 }
 
 func TestGamePerson(t *testing.T) {
