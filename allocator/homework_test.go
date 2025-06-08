@@ -10,20 +10,14 @@ import (
 )
 
 func Defragment(memory []byte, pointers []unsafe.Pointer) {
-	ptrsCnt := len(pointers)
-	provenPtrsCnt := 0
-	for i := 0; i < len(memory); i++ {
-		if provenPtrsCnt == ptrsCnt {
-			break
+	for i := range pointers {
+		if unsafe.Pointer(&memory[i]) == pointers[i] {
+			continue
 		}
-		ptr := unsafe.Pointer(&memory[i])
-		if slices.Contains(pointers, ptr) {
-			provenPtrsCnt++
-		} else {
-			memory[i], *(*byte)(pointers[provenPtrsCnt]) = *(*byte)(pointers[provenPtrsCnt]), memory[i]
-			pointers[provenPtrsCnt], ptr = ptr, pointers[provenPtrsCnt]
-			provenPtrsCnt++
-		}
+
+		memory[i] = *(*byte)(pointers[i])
+		*(*byte)(pointers[i]) = 0
+		pointers[i] = unsafe.Pointer(&memory[i])
 	}
 }
 
